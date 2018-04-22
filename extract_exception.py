@@ -9,12 +9,10 @@ from email.MIMEBase import MIMEBase
 from datetime import datetime, timedelta
 
 
-rx = re.compile(r'''
-\[([\s\S]+?)
-^Traceback
+rx = re.compile(r'''\[([\d:\- ]+)\] ERROR .*
+^Traceback .*
 [\s\S]+?
-(?=^\[|\Z)
-''', re.M | re.X)
+(?=^\[|\Z)''', re.M)
 
 class TracebackExtractor(object):
     def __init__(self, log_file, duration=5*60):
@@ -34,11 +32,9 @@ class TracebackExtractor(object):
         content = self.__tail()
         for match in rx.finditer(content):
             traceback = match.group(0)
-            time = re.findall("(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", match.group(1))
-            if len(time) > 0:
-                log_time = datetime.strptime(time[0], '%Y-%m-%d %H:%M:%S')
-                if log_time > datetime.now() - timedelta(seconds=self.duration):
-                    traceback_list.append(traceback)
+            log_time = datetime.strptime(match.group(1), '%Y-%m-%d %H:%M:%S')
+            if log_time > datetime.now() - timedelta(seconds=self.duration):
+                traceback_list.append(traceback)
         return traceback_list
 
 
